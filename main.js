@@ -28,6 +28,12 @@ const $ = require( "jquery" )( window );
  
 const runs = [];
 
+const toRemove = /\s+|\n/g;
+
+function stripText(jqueryObj) {
+    return jqueryObj.text().replace(toRemove, '');
+}
+
 $.get("https://jstris.jezevec10.com/cheese?display=5&user=justdumpedafatone", function(html) { 
     // get list of all 100L cheese runs
 	const cheeseRunsList = $(html).find("tr").filter(function() {
@@ -43,14 +49,14 @@ $.get("https://jstris.jezevec10.com/cheese?display=5&user=justdumpedafatone", fu
 			
 		} else {
 			const run = { 
-				number: $(runAttributes[0]).text(),
-				name: $(runAttributes[1]).text(),
-				time: $(runAttributes[2]).text(), 
-				blocks: $(runAttributes[3]).text(),
-				pps: $(runAttributes[4]).text(),
-				finesse: $(runAttributes[5]).text(),
-				date: $(runAttributes[6]).text(),
-				replay: $(runAttributes[7]).attr("href")
+				number: stripText($(runAttributes[0])),
+				name: stripText($(runAttributes[1])),
+				time: stripText($(runAttributes[2])), 
+				blocks: stripText($(runAttributes[3])),
+				pps: stripText($(runAttributes[4])),
+				finesse: stripText($(runAttributes[5])),
+				date: stripText($(runAttributes[6])),
+				replay: $(runAttributes[7]).find("a").attr("href")
 			}; 
 
 			runs.push(run); 

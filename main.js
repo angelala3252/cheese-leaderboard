@@ -64,5 +64,6 @@ $.get("https://jstris.jezevec10.com/cheese?display=5&user=justdumpedafatone", fu
 
 	}); 
 
+    runs.sort((run1, run2) => run1.blocks - run2.blocks);
 	console.log(JSON.stringify(runs)); 
 });

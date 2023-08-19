@@ -26,7 +26,7 @@ const { window } = new JSDOM("", {
 }); 
 const $ = require( "jquery" )( window ); 
  
-const runs = [];
+let runs = [];
 
 const toRemove = /\s+|\n/g;
 
@@ -34,36 +34,51 @@ function stripText(jqueryObj) {
     return jqueryObj.text().replace(toRemove, '');
 }
 
-$.get("https://jstris.jezevec10.com/cheese?display=5&user=justdumpedafatone", function(html) { 
-    // get list of all 100L cheese runs
-	const cheeseRunsList = $(html).find("tr").filter(function() {
-        return this.tagName.toLowerCase() === "tr"; // Filter only <tr> elements
+async function fetchAndProcessData(currLink) {
+    // get list of all cheese runs on this page
+    const response = await $.get(currLink);
+    const html = $(response);
+
+    const cheeseRunsList = html.find("tr")
+
+    cheeseRunsList.each(function( i ) { 
+        const row = $(cheeseRunsList[i]);
+        // 8 attributes: #	Name	Time	Blocks	PPS	Finesse	Date	Replay
+        const runAttributes = row.find("td");
+        
+        if (typeof runAttributes[0] === "undefined") {
+            
+        } else {
+            const run = { 
+                number: stripText($(runAttributes[0])),
+                name: stripText($(runAttributes[1])),
+                time: stripText($(runAttributes[2])), 
+                blocks: stripText($(runAttributes[3])),
+                pps: stripText($(runAttributes[4])),
+                finesse: stripText($(runAttributes[5])),
+                date: stripText($(runAttributes[6])),
+                replay: $(runAttributes[7]).find("a").attr("href")
+            }; 
+
+            runs.push(run); 
+        }
+
     }); 
 
-	cheeseRunsList.each(function( i ) { 
-		const row = $(cheeseRunsList[i]);
-		// 8 attributes: #	Name	Time	Blocks	PPS	Finesse	Date	Replay
-		const runAttributes = row.find("td");
-		
-		if (typeof runAttributes[0] === "undefined") {
-			
-		} else {
-			const run = { 
-				number: stripText($(runAttributes[0])),
-				name: stripText($(runAttributes[1])),
-				time: stripText($(runAttributes[2])), 
-				blocks: stripText($(runAttributes[3])),
-				pps: stripText($(runAttributes[4])),
-				finesse: stripText($(runAttributes[5])),
-				date: stripText($(runAttributes[6])),
-				replay: $(runAttributes[7]).find("a").attr("href")
-			}; 
+    const next = html.find('a.page-link:contains("Next »")');
+    if (next.length > 0) {
+        const nextLink = next.attr("href");
+        await fetchAndProcessData(nextLink); // Recursive call for next page
+    }
+}
 
-			runs.push(run); 
-		}
-
-	}); 
-
-    runs.sort((run1, run2) => run1.blocks - run2.blocks);
-	console.log(JSON.stringify(runs)); 
-});
+const initialLink = "https://jstris.jezevec10.com/cheese?display=5&user=justdumpedafatone&lines=100L";
+fetchAndProcessData(initialLink)
+    .then(() => {
+        runs.sort((run1, run2) => run1.blocks - run2.blocks);
+        console.log(JSON.stringify(runs));
+        console.log(runs.length);
+    })
+    .catch(error => {
+        console.error(error);
+    });
